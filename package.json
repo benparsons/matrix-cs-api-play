@@ -1,0 +1,23 @@
+{
+  "name": "matrix-cs-api-play",
+  "version": "0.0.1",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benparsons/matrix-cs-api-play.git"
+  },
+  "author": "benpa",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/benparsons/matrix-cs-api-play/issues"
+  },
+  "homepage": "https://github.com/benparsons/matrix-cs-api-play#readme",
+  "dependencies": {
+    "jsonpath": "^1.0.0",
+    "request": "^2.87.0"
+  }
+}
