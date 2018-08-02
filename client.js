@@ -8,6 +8,13 @@ var roomIds = [];
 roomIds["#riot:matrix.org"] = '!DgvjtOljKujDBrxyHk:matrix.org';
 
 var moment = require('moment');
+const sqlite3 = require('sqlite3').verbose();
+var sqlGenerator = require('./sql-generator.js');
+
+db = new sqlite3.Database('./events.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+    if (err) { console.log(err); } 
+    else { console.log("Connected to DB"); }
+  });
 
 if (access_token.length === 0) {
     login();
@@ -61,7 +68,7 @@ function sync() {
 
         var output = body;
         output = body.rooms.join[roomIds["#riot:matrix.org"]].timeline;
-        output.events.forEach(event => { printRoomEvent(event); });
+        output.events.forEach(event => { printAndStoreRoomEvent(event); });
         walkBackwardsGetRoomMessages(roomIds["#riot:matrix.org"], output.prev_batch);
     });
 }
@@ -70,19 +77,21 @@ var chunks = [];
 function walkBackwardsGetRoomMessages(roomId, start) {    
     getRequest(`/rooms/${roomId}/messages?dir=b&from=${start}&limit=1`, (err, body) => {
         if (err) { return console.log(err); }
-        body.chunk.forEach(event => { printRoomEvent(event); });
+        body.chunk.forEach(event => { printAndStoreRoomEvent(event); });
         walkBackwardsGetRoomMessages(roomId, body.end);
     });
 }
 
-function printRoomEvent(event) {
-    console.log(event);
-    return;
-    console.log({
+function printAndStoreRoomEvent(event) {
+    //console.log(event);
+    var flattenedEvent = {
         sender: event.sender,
         message: event.content.body,
         type: event.type,
         origin_server_ts: moment(event.origin_server_ts).format(),
         event_id: event.event_id
-    });
+    };
+    var sql = sqlGenerator.insertOrReplaceSql('events', flattenedEvent);
+    //console.log(sql);
+    db.run(sql);
 }
