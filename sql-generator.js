@@ -13,7 +13,7 @@ function insertOrReplaceSql(tableName, obj) {
     else if (! isNaN(value))
       values.push(value);
     else
-      values.push(`'${value.replace("'", "''")}'`);
+      values.push(`'${value.replace(/'/g, "''")}'`);
   });
   sql += values.join(', ');
   sql += ')';

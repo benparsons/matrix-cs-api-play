@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/benparsons/matrix-cs-api-play#readme",
   "dependencies": {
+    "express": "^4.16.3",
     "jsonpath": "^1.0.0",
     "moment": "^2.22.2",
     "request": "^2.87.0",

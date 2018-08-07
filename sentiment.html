@@ -1,0 +1,64 @@
+<html>
+<head>
+<!-- Load TensorFlow.js -->
+<!-- Get latest version at https://github.com/tensorflow/tfjs -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.11.2"> </script>
+<script src="sentiment.js"></script>
+<script>
+setTimeout(initUI, 0);
+function initUI() {
+  const button = document.getElementById('get-next-event');
+  button.addEventListener('click', async () => {
+    getNextEvent();
+  });
+}
+
+function getNextEvent() {
+  var xhr = new XMLHttpRequest();
+
+  xhr.addEventListener("readystatechange", function () {
+    if (this.readyState === 4) {
+      console.log(this.responseText);
+      var event = JSON.parse(this.responseText);
+      console.log(event.message);
+      var result = predict(event.message);
+      console.log(result);
+
+      var data = JSON.stringify({
+        "event_id": event.event_id,
+        "score": result.score
+      });
+
+      sendPost(data);
+    }
+  });
+
+  xhr.open("GET", "get-next-event");
+
+  xhr.send();
+}
+
+function sendPost(data) {
+  var xhr = new XMLHttpRequest();
+  xhr.withCredentials = true;
+
+  xhr.addEventListener("readystatechange", function () {
+    if (this.readyState === 4) {
+      console.log(this.responseText);
+    }
+  });
+
+  xhr.open("POST", "update-event-score");
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.setRequestHeader("Cache-Control", "no-cache");
+
+  xhr.send(data);
+}
+</script>
+</head>
+<body>
+    <button id="load-pretrained-remote">load-pretrained-remote</button>
+    <button id="get-next-event">get-next-event</button>
+    <p id="output_field"></p>
+</body>
+</html>

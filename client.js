@@ -1,11 +1,16 @@
 var config = require('./config.json');
 const request = require('request');
 var fs = require('fs');
+var http = require('http');
+
 
 var access_token = fs.readFileSync('access_token', 'utf-8');
 var server_cs_path = 'https://' + config.server + '/_matrix/client/';
 var roomIds = [];
 roomIds["#riot:matrix.org"] = '!DgvjtOljKujDBrxyHk:matrix.org';
+roomIds["#twim:matrix.org"] = '!FPUfgzXYWTKgIrwKxW:matrix.org';
+
+var limitCount = 100;
 
 var moment = require('moment');
 const sqlite3 = require('sqlite3').verbose();
@@ -19,7 +24,7 @@ db = new sqlite3.Database('./events.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_C
 if (access_token.length === 0) {
     login();
 }
-sync();
+//sync();
 function login() {
     console.log("==============");
     console.log("post_login");
@@ -58,8 +63,8 @@ function get_room_id_by_alias() {
 
 function sync() {
     var roomFilter = {
-        rooms: [roomIds["#riot:matrix.org"]],
-        "timeline":{"limit":5},
+        rooms: [roomIds["#twim:matrix.org"]],
+        "timeline":{"limit":limitCount},
         "state": {"not_types": ["*"]},
     };
     var filter = {"room":roomFilter, account_data:{not_types:['*']}};
@@ -67,15 +72,18 @@ function sync() {
         if (err) { return console.log(err); }
 
         var output = body;
-        output = body.rooms.join[roomIds["#riot:matrix.org"]].timeline;
-        output.events.forEach(event => { printAndStoreRoomEvent(event); });
-        walkBackwardsGetRoomMessages(roomIds["#riot:matrix.org"], output.prev_batch);
+        output = body.rooms.join[roomIds["#twim:matrix.org"]].timeline;
+        output.events.forEach(event => {
+            event.room_id = roomIds["#twim:matrix.org"];
+            printAndStoreRoomEvent(event);
+        });
+        walkBackwardsGetRoomMessages(roomIds["#twim:matrix.org"], output.prev_batch);
     });
 }
 
 var chunks = [];
 function walkBackwardsGetRoomMessages(roomId, start) {    
-    getRequest(`/rooms/${roomId}/messages?dir=b&from=${start}&limit=1`, (err, body) => {
+    getRequest(`/rooms/${roomId}/messages?dir=b&from=${start}&limit=${limitCount}`, (err, body) => {
         if (err) { return console.log(err); }
         body.chunk.forEach(event => { printAndStoreRoomEvent(event); });
         walkBackwardsGetRoomMessages(roomId, body.end);
@@ -83,15 +91,43 @@ function walkBackwardsGetRoomMessages(roomId, start) {
 }
 
 function printAndStoreRoomEvent(event) {
-    //console.log(event);
+    console.log(event.event_id);
     var flattenedEvent = {
         sender: event.sender,
         message: event.content.body,
         type: event.type,
         origin_server_ts: moment(event.origin_server_ts).format(),
-        event_id: event.event_id
+        event_id: event.event_id,
+        room_id: event.room_id
     };
     var sql = sqlGenerator.insertOrReplaceSql('events', flattenedEvent);
     //console.log(sql);
     db.run(sql);
 }
+
+http.createServer(function (req, res) {
+    if (req.method === 'GET' && req.url.indexOf("sentiment") !== -1) {
+
+    }
+    if (req.method === 'GET') {
+
+    } else if (req.method === 'POST') {
+        var body = '';
+
+        req.on('data', function (data) {
+            body += data;
+
+            if (body.length > 1e6)
+                req.connection.destroy();
+        });
+
+        req.on('end', function () {
+            var post = JSON.parse(body);
+            console.log(post);
+            res.writeHead(200, {'Content-Type': 'text/json'});
+
+        });
+        
+    }
+  }).listen(8080);
+  
